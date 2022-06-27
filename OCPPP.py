@@ -87,10 +87,10 @@ class Grid:
             for j in i:
                 xh.append(int(j))
         for i in self.squares:
-            if not xh[i.number] and i.right:
-                connection.append([[i.coord[0], i.coord[0]], [i.coord[1], i.coord[1] + 1]])
-            if xh[i.number] and [i.coord[0], i.coord[1] + 1] not in unpassable and i.down:
+            if xh[i.number]:
                 connection.append([[i.coord[0], i.coord[0] + 1], [i.coord[1], i.coord[1]]])
+            else:
+                connection.append([[i.coord[0], i.coord[0]], [i.coord[1], i.coord[1] + 1]])
         for i in connection:
             plt.plot(i[1], i[0], color='r')
             plt.scatter(i[1], i[0], color='b')
@@ -115,7 +115,11 @@ start = [0, 0]
 end = [9, 9]
 unpassable = [[1, 4], [2, 4], [3, 4], [1, 5], [2, 5], [3, 5], [5, 7], [5, 8], [6, 7], [6, 8]]
 # unpassable = [[5, 7], [5, 8], [6, 7], [6, 8]]
+mode = 0
 g = Grid(start, end, unpassable)
-g.findNAI()
-# g.exportArrays()
-g.plot_csv('xh.csv')
+if mode:
+    g.findNAI()
+    g.exportArrays()
+else:
+    g.findNAI()
+    g.plot_csv('xh.csv')
