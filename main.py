@@ -1,0 +1,138 @@
+# -*- coding: utf-8 -*-
+"""
+Created on May 24 2021
+
+@author: Wei-Yu Chen
+#Purpose: Calculate NAI matrix for matlab LP solver then plot the result from the LP solver
+#Ref:
+@INPROCEEDINGS{7743548,
+  author={Bochkarev, Stanislav and Smith, Stephen L.},
+  booktitle={2016 IEEE International Conference on Automation Science and Engineering (CASE)},
+  title={On minimizing turns in robot coverage path planning},
+  year={2016},
+  volume={},
+  number={},
+  pages={1237-1242},
+  doi={10.1109/COASE.2016.7743548}}
+@misc{https://doi.org/10.48550/arxiv.2109.08185,
+  doi = {10.48550/ARXIV.2109.08185},
+  url = {https://arxiv.org/abs/2109.08185},
+  author = {Ramesh, Megnath and Imeson, Frank and Fidan, Baris and Smith, Stephen L.},
+  title = {Optimal Partitioning of Non-Convex Environments for Minimum Turn Coverage Planning},
+  publisher = {arXiv},
+  year = {2021},
+  copyright = {arXiv.org perpetual, non-exclusive license}}
+
+"""
+import csv
+
+import numpy as np
+from scipy.io import savemat
+import matplotlib.pyplot as plt
+
+
+def neighbor(i, j):
+    return abs(i[0] - j[0]) <= 1 and abs(i[1] - j[1]) <= 1 and i != j
+
+
+def manhattan(i, j):
+    return abs(i[0] - j[0]) + abs(i[1] - j[1]) == 1
+
+
+def order(i):
+    return i[0]
+
+
+def neighboring_lines(i, j):
+    for ii in i:
+        for jj in j:
+            if manhattan(ii, jj):
+                return True
+    return False
+
+
+# right first then down
+class Grid:
+    def __init__(self, start, end, unpassable):
+        self.squares = []
+        self.grid_num = (end[1] - start[1] + 1) * (end[0] - start[0] + 1) - len(unpassable)
+        self.naiH = []
+        self.naiV = []
+
+    def findNAI(self):
+        counter = 0
+        for i in range(start[0], end[0] + 1):
+            for j in range(start[1], end[1] + 1):
+                if [i, j] not in unpassable:
+                    point = Square([i, j], end, unpassable, counter)
+                    self.squares.append(point)
+                    naiH_row = []
+                    naiV_row = []
+                    for k in range(self.grid_num):
+                        if point.right:
+                            if counter == k:
+                                naiH_row.append(1)
+                            else:
+                                naiH_row.append(0)
+                        else:
+                            naiH_row.append(0)
+                        if point.down:
+                            if counter == k:
+                                naiV_row.append(1)
+                            else:
+                                naiV_row.append(0)
+                        else:
+                            naiV_row.append(0)
+                    counter += 1
+                    self.naiH.append(naiH_row)
+                    self.naiV.append(naiV_row)
+                    print(naiH_row)
+
+    def exportArrays(self):
+        nai = dict()
+        nai['NAIH'] = np.array(self.naiH)
+        nai['NAIV'] = np.array(self.naiV)
+        savemat('NAI.mat', nai)
+
+    def plot_csv(self, file):
+        f = open(file)
+        mat = csv.reader(f)
+        xh = []
+        connection = []
+        plt.gca().invert_yaxis()
+        for i in mat:
+            for j in i:
+                xh.append(int(j))
+        for i in self.squares:
+            if not xh[i.number] and i.right:
+                connection.append([[i.coord[0], i.coord[0]], [i.coord[1], i.coord[1] + 1]])
+            if xh[i.number] and [i.coord[0], i.coord[1] + 1] not in unpassable and i.down:
+                connection.append([[i.coord[0], i.coord[0] + 1], [i.coord[1], i.coord[1]]])
+        for i in connection:
+            plt.plot(i[1], i[0], color='r')
+            plt.scatter(i[1], i[0], color='b')
+        plt.show()
+
+
+class Square:
+    def __init__(self, coord, end, unpassable, number):
+        self.coord = coord
+        self.number = number
+        self.right = None
+        self.down = None
+        self.orientation = 1
+        self.connection_num = 0
+        if self.coord[0] + 1 <= end[0] and ([self.coord[0] + 1, self.coord[1]]) not in unpassable:
+            self.down = [self.coord[0] + 1, self.coord[1]]
+        if self.coord[1] + 1 <= end[1] and ([self.coord[0], self.coord[1] + 1]) not in unpassable:
+            self.right = [self.coord[0], self.coord[1] + 1]
+
+
+start = [0, 0]
+end = [9, 9]
+unpassable = [[1, 4], [2, 4], [3, 4], [1, 5], [2, 5], [3, 5], [5, 7], [5, 8], [6, 7], [6, 8]]
+# unpassable = [[5, 7], [5, 8], [6, 7], [6, 8]]
+g = Grid(start, end, unpassable)
+g.findNAI()
+# g.exportArrays()
+g.plot_csv('xh.csv')
