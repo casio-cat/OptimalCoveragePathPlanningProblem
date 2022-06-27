@@ -1,3 +1,4 @@
+% load NAI matrix from python generated NAI.mat
 NAIs = load("NAI.mat");
 Ah = NAIs.NAIH;
 Ah = cast(Ah, "double");

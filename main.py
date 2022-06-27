@@ -31,26 +31,6 @@ from scipy.io import savemat
 import matplotlib.pyplot as plt
 
 
-def neighbor(i, j):
-    return abs(i[0] - j[0]) <= 1 and abs(i[1] - j[1]) <= 1 and i != j
-
-
-def manhattan(i, j):
-    return abs(i[0] - j[0]) + abs(i[1] - j[1]) == 1
-
-
-def order(i):
-    return i[0]
-
-
-def neighboring_lines(i, j):
-    for ii in i:
-        for jj in j:
-            if manhattan(ii, jj):
-                return True
-    return False
-
-
 # right first then down
 class Grid:
     def __init__(self, start, end, unpassable):
@@ -59,6 +39,7 @@ class Grid:
         self.naiH = []
         self.naiV = []
 
+    # generate NAI matrix for horizontal and vertical graph
     def findNAI(self):
         counter = 0
         for i in range(start[0], end[0] + 1):
@@ -88,12 +69,14 @@ class Grid:
                     self.naiV.append(naiV_row)
                     print(naiH_row)
 
+    # export matrix as matlab .mat file
     def exportArrays(self):
         nai = dict()
         nai['NAIH'] = np.array(self.naiH)
         nai['NAIV'] = np.array(self.naiV)
         savemat('NAI.mat', nai)
 
+    # plot a scatter plot from matlab generated results xh.csv
     def plot_csv(self, file):
         f = open(file)
         mat = csv.reader(f)
